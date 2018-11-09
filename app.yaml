@@ -1,0 +1,10 @@
+runtime: go
+api_version: go1
+
+handlers:
+- url: /$
+  static_files: resources/index.html
+  upload: resources/index.html
+
+- url: /resources
+  static_dir: resources
