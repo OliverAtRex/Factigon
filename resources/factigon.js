@@ -1,9 +1,12 @@
+let form = document.getElementById("form");
+let question = document.getElementById("question");
+let answer = document.getElementById("answer");
 form.onsubmit= function(e){
-  var ans=localStorage[question.value];
-  answer.textContent=ans;
-  new_answer.value=ans;
-  e.preventDefault();
-}
-new_answer.onchange= function(e){
-  localStorage[question.value]=new_answer.value;
-}
+	fetch( '/ask?qu='+question.value)
+		.then(function(response){
+			response.text().then(function(ans){
+				answer.textContent=ans;
+			});
+		});
+	e.preventDefault();
+};

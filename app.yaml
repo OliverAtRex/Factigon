@@ -8,3 +8,6 @@ handlers:
 
 - url: /resources
   static_dir: resources
+  
+- url: /ask$
+  script: _go_app
