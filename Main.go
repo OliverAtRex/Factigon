@@ -33,7 +33,7 @@ func askHandler(w http.ResponseWriter, r *http.Request){
 	if err == datastore.ErrNoSuchEntity{
 		fact = Fact{
 			Question: qu,
-			Answer: "I don't know.",
+			Answer: "",
 			LastTime: time.Now(),
 			Count: 1,
 		}
@@ -46,6 +46,9 @@ func askHandler(w http.ResponseWriter, r *http.Request){
 	}
 	if _, err := datastore.Put(ctx, key, &fact); err != nil {
     	log.Errorf(ctx, "datastore.Put: %v", err)
+    }
+    if fact.Answer == ""{
+    	fact.Answer = "I don't know yet. Come back later."
     }
 	fmt.Fprintln(w, fact.Answer)
 }
