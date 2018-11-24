@@ -6,6 +6,8 @@ import (
 		"time"
 		"google.golang.org/appengine/datastore"
 		"google.golang.org/appengine/log"
+		"strings"
+		"regexp"
 )
 type Fact struct{
 	Question string
@@ -19,18 +21,33 @@ func askHandler(w http.ResponseWriter, r *http.Request){
 	if !ok || len(keys[0]) < 1 {
 		return
 	}
-	qu := keys[0]
+	// Convert question to lowercase and remove all punctuation and other
+	// non-word characters
+	reg := regexp.MustCompile(`[^\w ]+`)
+	qu := strings.TrimSpace(
+		strings.ToLower(
+			reg.ReplaceAllString(keys[0], "")))
 	key := datastore.NewKey(ctx, "Fact", qu, 0, nil)
-	fact := Fact{
-		Question: qu,
-		//Answer:
-		LastTime: time.Now(),
-		Count: 1,
+	var fact Fact
+	err := datastore.Get(ctx, key, &fact)
+	if err == datastore.ErrNoSuchEntity{
+		fact = Fact{
+			Question: qu,
+			Answer: "I don't know.",
+			LastTime: time.Now(),
+			Count: 1,
+		}
+	} else if (err != nil) {
+		log.Errorf(ctx, "datastore.Get: %v", err)
+		return
+	} else {
+		fact.LastTime = time.Now()
+		fact.Count ++
 	}
 	if _, err := datastore.Put(ctx, key, &fact); err != nil {
-        log.Errorf(ctx, "datastore.Put: %v", err)
+    	log.Errorf(ctx, "datastore.Put: %v", err)
     }
-	fmt.Fprintln(w, "You asked:", qu)
+	fmt.Fprintln(w, fact.Answer)
 }
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
