@@ -55,21 +55,25 @@ func askHandler(w http.ResponseWriter, r *http.Request) {
     if fact.Answer == "" {
     	fact.Answer = "I don't know yet. Come back later."
     } else if strings.Contains(fact.Answer, "[RANDOM_FACT]") {
-    	rf := getRandomFact(ctx)
+    	rf := getRandomFact(ctx, true)
     	fact.Answer = strings.Replace(fact.Answer,"[RANDOM_FACT]", rf, -1)
 	}
 	fmt.Fprintln(w, fact.Answer)
 }
 
-func getRandomFact(ctx context.Context) string {
+func getRandomFact(ctx context.Context, useCursor bool) string {
 	q := datastore.NewQuery("Fact")
 
 	// If we stored a cursor during a previous request, use it.
-	item, err := memcache.Get(ctx, "fact_cursor")
-	if err == nil {
-		cursor, err := datastore.DecodeCursor(string(item.Value))
+	hadCursor := false
+	if (useCursor) {
+		item, err := memcache.Get(ctx, "fact_cursor")
 		if err == nil {
-			q = q.Start(cursor)
+			cursor, err := datastore.DecodeCursor(string(item.Value))
+			if err == nil {
+				hadCursor = true
+				q = q.Start(cursor)
+			}
 		}
 	}
 
@@ -79,8 +83,10 @@ func getRandomFact(ctx context.Context) string {
 	for {
 		_, err := t.Next(&fact)
 		if err == datastore.Done {
-			memcache.Delete(ctx, "fact_cursor")
-			return "Hmm, I'm not sure!"
+			if hadCursor {
+				return getRandomFact(ctx, false);
+			}
+			return "NOTHING!"
         }
         if err != nil {
 			log.Errorf(ctx, "fetching next Fact: %v", err)
