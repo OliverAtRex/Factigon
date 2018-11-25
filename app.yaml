@@ -5,9 +5,11 @@ handlers:
 - url: /$
   static_files: resources/index.html
   upload: resources/index.html
+  secure: always
 
 - url: /resources
   static_dir: resources
   
 - url: /ask$
   script: _go_app
+  secure: always
